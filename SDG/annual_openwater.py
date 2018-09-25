@@ -39,15 +39,6 @@ for annual_vrt in annual_vrts[6:19]:
         masked=(mask*(data>thresh_float)).sum().values
     print(year, masked, masked*25.*25./1e6)
 
-    continue
-    basefname = os.path.basename(annual_vrt)
-    print(basefname)
 
-    watermask = basefname.replace('.vrt', '_%d_AUS.tif'%threshold)
-
-    if not os.path.exists(watermask):
-        # apply threshold
-        cmd = 'gdal_calc.py -A %s -B %s --calc="(A>%f)*B" --NoDataValue=0 --type=Byte --co="COMPRESS=LZW" --co="TILED=YES" --co="BLOCKXSIZE=256" --co="BLOCKYSIZE=256" --outfile=%s'%(annual_vrt, maskfile, threshold/100., watermask)
-        subprocess.call(cmd, shell=True)
                          
         
