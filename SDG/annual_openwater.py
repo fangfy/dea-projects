@@ -20,25 +20,25 @@ if not os.path.exists(maskfile):
     print(cmd)
     subprocess.call(cmd, shell=True)
     
-inputpath = '/g/data/u46/users/bt2744/work/data/wofs/output/prod/'
+inputpath = '/g/data/u46/users/bt2744/work/data/wofs/output/prod/annualstats/'
 annual_vrts = glob.glob(inputpath + 'wofs_????_annual_summary.vrt')
 annual_vrts.sort()
 annual_vrts = annual_vrts[::-1]
 
+confidence_vrt = 'wofs_confidence.vrt'
+conf_thresh = 0.9
+
 print("Year, # of pixels with more than %d percent detections, extent (km^2)"%threshold)
 
-for annual_vrt in annual_vrts[6:19]:
+for annual_vrt in annual_vrts:
     
     year = os.path.basename(annual_vrt).split('_')[1]
     data=xr.open_rasterio(annual_vrt, chunks={'x':csize, 'y':csize})
     mask=xr.open_rasterio('mask.tif', chunks={'x':csize, 'y':csize})
+    conf=xr.open_rasterio(confidence_vrt, chunks={'x':csize, 'y':csize})
 
     thresh_float = threshold/100.
-
+    
     with ProgressBar(dt=60):
-        masked=(mask*(data>thresh_float)).sum().values
-    print(year, masked, masked*25.*25./1e6)
-
-
-                         
-        
+        masked=(mask*(data>thresh_float)*(conf>conf_thresh)).sum().values
+    print(year, masked, int(round(masked*25.*25./1e6)))
