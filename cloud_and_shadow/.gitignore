@@ -1,0 +1,8 @@
+
+datacube-stats/
+STDIN.*
+*.tif
+*.qgs
+*.vrt
+*.ovr
+*.pngw
