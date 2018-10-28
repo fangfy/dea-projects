@@ -11,14 +11,16 @@ bands = ['cloud_acca_count','cloud_fmask_count','shadow_acca_count','shadow_fmas
 #build vrt
 for idx, band in enumerate(bands):
     vrtname = band+'.vrt'
+    print(vrtname)
     if os.path.exists(vrtname): continue
     cmd = 'gdalbuildvrt %s %s/LS8_CLOUD_COUNT_*.nc -sd %d'%(vrtname, inputdir, idx+1)
     subprocess.call(cmd, shell=True)
 
-bands = ['cloud_acca_only_count', 'cloud_fmask_only_count', 'shadow_acca_only_count', ' shadow_fmask_only_count']
+bands = ['cloud_acca_only_count', 'cloud_fmask_only_count', 'shadow_acca_only_count', 'shadow_fmask_only_count']
 #build vrt
 for idx, band in enumerate(bands):
     vrtname = band+'.vrt'
+    print(vrtname)
     if os.path.exists(vrtname): continue
     cmd = 'gdalbuildvrt %s %s/LS8_CLOUD_CROSSCOUNT_*.nc -sd %d'%(vrtname, inputdir, idx+1)
     subprocess.call(cmd, shell=True)
@@ -31,7 +33,7 @@ for cf in count_files:
     if os.path.exists(percent_file): continue
     ds = xr.open_dataset(cf)
     valid = (ds.total_observation_count >=0) & (ds.cloud_acca_count>=0) & (ds.cloud_fmask_count>=0)
-    ds_percent = (ds.cloud_acca_count.astype('float32')*100./ds.total_observation_count.astype('float32')).round().where(valid, 255).astype('uint8').to_dataset(dim='cloud_acca_percent',name='cloud_percent')
+    ds_percent = (ds.cloud_acca_count*100./ds.total_observation_count).round().where(valid, 255).astype('uint8').to_dataset(dim='cloud_acca_percent',name='cloud_percent')
     ds_percent['cloud_fmask_percent'] = (ds.cloud_fmask_count*100./ds.total_observation_count).round().where(valid, 255).astype('uint8')
     ds_percent['cloud_acca_minus_fmask_percent'] = (ds_percent.cloud_acca_percent-ds_percent.cloud_fmask_percent+100).where(valid, 255).astype('uint8')
     ds_percent.attrs=ds.attrs.copy()
@@ -45,10 +47,11 @@ for cf in count_files:
     ds = xr.open_dataset(cf)
     ds_total = xr.open_dataset(total_file)
     valid = (ds_total.total_observation_count >=0) & (ds.cloud_acca_only_count>=0) & (ds.cloud_fmask_only_count>=0)
-    ds_percent = (ds.cloud_acca_only_count.astype('float32')*100./ds_total.total_observation_count.astype('float32')).round().where(valid, 255).astype('uint8').to_dataset(dim='cloud_acca_only_percent',name='cloud_percent')
+    ds_percent = (ds.cloud_acca_only_count*100./ds_total.total_observation_count).round().where(valid, 255).astype('uint8').to_dataset(dim='cloud_acca_only_percent',name='cloud_percent')
     ds_percent['cloud_fmask_only_percent'] = (ds.cloud_fmask_only_count*100./ds_total.total_observation_count).round().where(valid, 255).astype('uint8')
     ds_percent['shadow_acca_only_percent'] = (ds.shadow_acca_only_count*100./ds_total.total_observation_count).round().where(valid, 255).astype('uint8')
     ds_percent['shadow_fmask_only_percent'] = (ds.shadow_fmask_only_count*100./ds_total.total_observation_count).round().where(valid, 255).astype('uint8')
+    ds_percent['cloud_acca_only_percent_fmask'] = (ds.cloud_acca_only_count*100./ds_total.cloud_fmask_count).round().where(valid, 255).astype('uint8')
     ds_percent.attrs=ds.attrs.copy()
     ds_percent.to_netcdf(percent_file)
 
@@ -67,6 +70,7 @@ for idx, band in enumerate(bands):
 for idx, band in enumerate(bands):
     tifname = band+'.tif'
     vrtname = band+'.vrt'
+    print(tifname)
     if os.path.exists(tifname): continue
     cmd = 'gdal_translate %s %s -co COMPRESS=LZW -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -ot Byte -a_srs EPSG:3577 -a_nodata %s'%(vrtname, tifname, nodata[idx])
     subprocess.call(cmd, shell=True)
@@ -74,7 +78,7 @@ for idx, band in enumerate(bands):
     subprocess.call(cmd, shell=True)
 
 
-bands = ['cloud_acca_only_percent','cloud_fmask_only_percent','shadow_acca_only_percent', 'shadow_fmask_only_percent']
+bands = ['cloud_acca_only_percent','cloud_fmask_only_percent','shadow_acca_only_percent', 'shadow_fmask_only_percent', 'cloud_acca_only_percent_fmask']
 nodata = ['255']*len(bands)
 #build vrt
 for idx, band in enumerate(bands):
@@ -87,6 +91,7 @@ for idx, band in enumerate(bands):
 for idx, band in enumerate(bands):
     tifname = band+'.tif'
     vrtname = band+'.vrt'
+    print(tifname)
     if os.path.exists(tifname): continue
     cmd = 'gdal_translate %s %s -co COMPRESS=LZW -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -ot Byte -a_srs EPSG:3577 -a_nodata %s'%(vrtname, tifname, nodata[idx])
     subprocess.call(cmd, shell=True)
